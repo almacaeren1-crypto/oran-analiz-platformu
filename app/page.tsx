@@ -1,26 +1,29 @@
-import { getTodayMatches } from "@/lib/api";
-import { formatKickoff } from "@/lib/utils";
-
 export default async function Home() {
-  const { matches, error } = await getTodayMatches();
+  const API_KEY = process.env.API_FOOTBALL_KEY;
 
-  if (error) {
-    return <div className="p-10 text-red-500">Hata: {error}</div>;
-  }
-
-  // 🔴 CANLI
-  const liveMatches = matches.filter((m) =>
-    ["1H", "HT", "2H", "ET", "P"].includes(m.fixture.status.short)
+  const res = await fetch(
+    "https://v3.football.api-sports.io/fixtures?live=all",
+    {
+      headers: {
+        "x-apisports-key": API_KEY!,
+      },
+      next: { revalidate: 60 },
+    }
   );
 
-  // 🔵 BAŞLAMAMIŞ
+  const data = await res.json();
+  const matches = data.response || [];
+
+  const liveMatches = matches.filter((m: any) =>
+    ["1H", "HT", "2H"].includes(m.fixture.status.short)
+  );
+
   const upcomingMatches = matches.filter(
-    (m) => m.fixture.status.short === "NS"
+    (m: any) => m.fixture.status.short === "NS"
   );
 
-  // ⚫ BİTMİŞ
-  const finishedMatches = matches.filter((m) =>
-    ["FT", "AET", "PEN"].includes(m.fixture.status.short)
+  const finishedMatches = matches.filter((m: any) =>
+    ["FT"].includes(m.fixture.status.short)
   );
 
   return (
@@ -32,69 +35,59 @@ export default async function Home() {
 
       <div className="space-y-12">
 
-        {/* 🔴 CANLI */}
+        {/* CANLI */}
         <section>
-          <h2 className="mb-4 text-2xl font-bold text-red-400">
+          <h2 className="text-2xl text-red-400 mb-4">
             🔴 Canlı Maçlar ({liveMatches.length})
           </h2>
 
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {liveMatches.map((match) => (
-              <article key={match.fixture.id} className="rounded-2xl border border-red-500 bg-slate-900 p-6">
-                <h3 className="font-semibold">
-                  {match.teams.home.name} - {match.teams.away.name}
-                </h3>
-
-                <p className="mt-2 text-red-400">
-                  {match.fixture.status.elapsed}' CANLI
-                </p>
-
-                <p className="mt-3 text-xl font-bold">
-                  {match.goals.home} - {match.goals.away}
-                </p>
-              </article>
+          <div className="grid gap-4">
+            {liveMatches.map((m: any) => (
+              <div key={m.fixture.id} className="p-4 bg-slate-800 rounded-xl">
+                {m.teams.home.name} - {m.teams.away.name}
+                <div className="text-red-400">
+                  {m.fixture.status.elapsed}' CANLI
+                </div>
+                <div className="text-xl font-bold">
+                  {m.goals.home} - {m.goals.away}
+                </div>
+              </div>
             ))}
           </div>
         </section>
 
-        {/* 🔵 GÜNÜN MAÇLARI */}
+        {/* GÜNÜN MAÇLARI */}
         <section>
-          <h2 className="mb-4 text-2xl font-bold text-blue-400">
+          <h2 className="text-2xl text-blue-400 mb-4">
             🔵 Günün Maçları ({upcomingMatches.length})
           </h2>
 
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {upcomingMatches.map((match) => (
-              <article key={match.fixture.id} className="rounded-2xl border border-blue-500 bg-slate-900 p-6">
-                <h3 className="font-semibold">
-                  {match.teams.home.name} - {match.teams.away.name}
-                </h3>
-
-                <p className="mt-2 text-slate-400">
-                  Saat: {formatKickoff(match.fixture.date)}
-                </p>
-              </article>
+          <div className="grid gap-4">
+            {upcomingMatches.map((m: any) => (
+              <div key={m.fixture.id} className="p-4 bg-slate-800 rounded-xl">
+                {m.teams.home.name} - {m.teams.away.name}
+                <div className="text-gray-400">
+                  Saat: {new Date(m.fixture.date).toLocaleTimeString("tr-TR")}
+                </div>
+              </div>
             ))}
           </div>
         </section>
 
-        {/* ⚫ BİTMİŞ */}
+        {/* BİTMİŞ */}
         <section>
-          <h2 className="mb-4 text-2xl font-bold text-gray-400">
+          <h2 className="text-2xl text-gray-400 mb-4">
             ⚫ Bitmiş Maçlar ({finishedMatches.length})
           </h2>
 
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {finishedMatches.map((match) => (
-              <article key={match.fixture.id} className="rounded-2xl border border-gray-600 bg-slate-900 p-6">
-                <h3 className="font-semibold">
-                  {match.teams.home.name} - {match.teams.away.name}
-                </h3>
-
-                <p className="mt-3 text-xl font-bold">
-                  {match.goals.home} - {match.goals.away}
-                </p>
-              </article>
+          <div className="grid gap-4">
+            {finishedMatches.map((m: any) => (
+              <div key={m.fixture.id} className="p-4 bg-slate-800 rounded-xl">
+                {m.teams.home.name} - {m.teams.away.name}
+                <div className="text-xl font-bold">
+                  {m.goals.home} - {m.goals.away}
+                </div>
+              </div>
             ))}
           </div>
         </section>
