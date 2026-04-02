@@ -33,7 +33,21 @@ export default async function MatchPage({ params }: any) {
 
   const homeStats = await getTeamStats(homeId, leagueId, season);
   const awayStats = await getTeamStats(awayId, leagueId, season);
+  const homeMatches = await getLastMatches(match.teams.home.id);
+const awayMatches = await getLastMatches(match.teams.away.id);
+function getFormScore(matches: any[]) {
+  if (!matches) return 0;
 
+  let score = 0;
+
+  matches.forEach((m) => {
+    if (m.teams.home.winner === true) score += 3;
+    else if (m.teams.away.winner === true) score += 0;
+    else score += 1;
+  });
+
+  return score;
+}
   const homeGoals =
     homeStats?.goals?.for?.average?.total
       ? parseFloat(homeStats.goals.for.average.total)
@@ -44,8 +58,13 @@ export default async function MatchPage({ params }: any) {
       ? parseFloat(awayStats.goals.for.average.total)
       : 1;
 
-  const prediction = calculatePrediction(homeGoals, awayGoals);
+const homeForm = getFormScore(homeMatches);
+const awayForm = getFormScore(awayMatches);
 
+const prediction = calculatePrediction(
+  homeGoals + homeForm * 0.2,
+  awayGoals + awayForm * 0.2
+);
   return (
     <main className="min-h-screen bg-slate-950 p-6 text-white">
       <h1 className="text-2xl font-bold mb-4">
