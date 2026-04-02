@@ -1,27 +1,34 @@
 export function calculatePrediction(homeGoals: number, awayGoals: number) {
-  const total = homeGoals + awayGoals;
 
-  let homeWin = 50;
-  let draw = 25;
-  let awayWin = 25;
+  let homeWin = 33;
+  let draw = 34;
+  let awayWin = 33;
 
-  if (homeGoals > awayGoals) {
-    homeWin += 20;
-    awayWin -= 15;
-    draw -= 5;
-  } else if (awayGoals > homeGoals) {
-    awayWin += 20;
-    homeWin -= 15;
-    draw -= 5;
+  const diff = homeGoals - awayGoals;
+
+  if (diff > 0.5) {
+    homeWin = 60;
+    draw = 25;
+    awayWin = 15;
+  } else if (diff < -0.5) {
+    homeWin = 15;
+    draw = 25;
+    awayWin = 60;
+  } else {
+    homeWin = 40;
+    draw = 30;
+    awayWin = 30;
   }
 
-  const over25 = total > 2 ? 70 : 30;
-  const kgVar = homeGoals > 0 && awayGoals > 0 ? 65 : 25;
+  const total = homeGoals + awayGoals;
+
+  const over25 = total > 2.5 ? 65 : 35;
+  const kgVar = homeGoals > 0.8 && awayGoals > 0.8 ? 60 : 30;
 
   return {
-    homeWin: Math.max(homeWin, 0),
-    draw: Math.max(draw, 0),
-    awayWin: Math.max(awayWin, 0),
+    homeWin,
+    draw,
+    awayWin,
     over25,
     kgVar,
   };
