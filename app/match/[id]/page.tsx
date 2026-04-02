@@ -1,5 +1,5 @@
 import { calculatePrediction } from "@/lib/predictor";
-import { getTeamStats } from "@/lib/stats";
+import { getTeamStats, getLastMatches } from "@/lib/stats";
 
 export default async function MatchPage({ params }: any) {
   const API_KEY = process.env.API_FOOTBALL_KEY;
@@ -31,23 +31,32 @@ export default async function MatchPage({ params }: any) {
   const leagueId = match.league.id;
   const season = match.league.season;
 
+  // API verileri
   const homeStats = await getTeamStats(homeId, leagueId, season);
   const awayStats = await getTeamStats(awayId, leagueId, season);
-  const homeMatches = await getLastMatches(match.teams.home.id);
-const awayMatches = await getLastMatches(match.teams.away.id);
-function getFormScore(matches: any[]) {
-  if (!matches) return 0;
 
-  let score = 0;
+  const homeMatches = await getLastMatches(homeId);
+  const awayMatches = await getLastMatches(awayId);
 
-  matches.forEach((m) => {
-    if (m.teams.home.winner === true) score += 3;
-    else if (m.teams.away.winner === true) score += 0;
-    else score += 1;
-  });
+  // FORM HESABI
+  function getFormScore(matches: any[]) {
+    if (!matches) return 0;
 
-  return score;
-}
+    let score = 0;
+
+    matches.forEach((m) => {
+      if (m.teams.home.winner === true) score += 3;
+      else if (m.teams.away.winner === true) score += 0;
+      else score += 1;
+    });
+
+    return score;
+  }
+
+  const homeForm = getFormScore(homeMatches);
+  const awayForm = getFormScore(awayMatches);
+
+  // Gol ortalaması
   const homeGoals =
     homeStats?.goals?.for?.average?.total
       ? parseFloat(homeStats.goals.for.average.total)
@@ -58,13 +67,12 @@ function getFormScore(matches: any[]) {
       ? parseFloat(awayStats.goals.for.average.total)
       : 1;
 
-const homeForm = getFormScore(homeMatches);
-const awayForm = getFormScore(awayMatches);
+  // TAHMİN
+  const prediction = calculatePrediction(
+    homeGoals + homeForm * 0.2,
+    awayGoals + awayForm * 0.2
+  );
 
-const prediction = calculatePrediction(
-  homeGoals + homeForm * 0.2,
-  awayGoals + awayForm * 0.2
-);
   return (
     <main className="min-h-screen bg-slate-950 p-6 text-white">
       <h1 className="text-2xl font-bold mb-4">
@@ -83,7 +91,7 @@ const prediction = calculatePrediction(
         Durum: {match.fixture.status.long}
       </div>
 
-      {/* FORM / İSTATİSTİK */}
+      {/* İSTATİSTİK */}
       <div className="bg-slate-900 p-4 rounded-xl mb-6">
         <h2 className="text-green-400 font-bold mb-2">Takım İstatistikleri</h2>
 
@@ -91,11 +99,13 @@ const prediction = calculatePrediction(
           <div>
             <div className="font-semibold">{match.teams.home.name}</div>
             <div>Gol Ort: {homeGoals}</div>
+            <div>Form Puanı: {homeForm}</div>
           </div>
 
           <div>
             <div className="font-semibold">{match.teams.away.name}</div>
             <div>Gol Ort: {awayGoals}</div>
+            <div>Form Puanı: {awayForm}</div>
           </div>
         </div>
       </div>
@@ -114,7 +124,8 @@ const prediction = calculatePrediction(
 
         <div className="flex justify-between mt-4 text-sm text-slate-400">
           <div>2.5 Üst %{prediction.over25}</div>
-<div>KG Var %{prediction.kgVar}</div>        </div>
+          <div>KG Var %{prediction.kgVar}</div>
+        </div>
       </div>
     </main>
   );
