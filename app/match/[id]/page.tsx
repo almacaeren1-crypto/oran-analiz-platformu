@@ -95,8 +95,7 @@ export default async function MatchPage({ params }: any) {
 
         <div className="flex justify-between mt-4 text-sm text-slate-400">
           <div>2.5 Üst %{prediction.over25}</div>
-          <div>KG Var %{prediction.kgvar}</div>
-        </div>
+<div>KG Var %{prediction.kgVar}</div>        </div>
       </div>
     </main>
   );
